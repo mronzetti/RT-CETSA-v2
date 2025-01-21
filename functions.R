@@ -21,8 +21,8 @@ library(cowplot)
 library(hrbrthemes)
 library(ggpubr)
 library(MESS)
-library(devtools);
-load_all(".");
+library(devtools)
+#load_all(".")
 #' construct_grid
 #' Construct a grid with compatable headers for MoltenProt file prep
 #'
@@ -469,7 +469,7 @@ calculate_auc <- function(df) {
   
   # Pivot and clean each row for AUC model
   for (i in 1:nrow(auc.df)) {
-    curveVals <- as.vector(auc.df[i,]) %>%
+    curveVals <- as_tibble(auc.df[i,]) %>%
       pivot_longer(cols = everything(),
                    names_to = 'temp',
                    values_to = 'response')

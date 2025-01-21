@@ -14,7 +14,7 @@
 # # Main Analysis
 
 library(tidyverse)
-source('./functions.R')
+source('functions.R')
 # EXPERIMENTAL PARAMETERS AND SETUP
 #
 # Input experiment parameters here
@@ -65,7 +65,7 @@ print(controlPlot)
 #   convert_zscore
 
 #Derive RSS values for null and alternate model for each compound from full_df
-rss <- compute.rss.models(full_df, rssPlot = TRUE, drPlot = TRUE, plotModel = FALSE)
+rss <- compute.rss.models(full_df, rssPlot = FALSE, drPlot = FALSE, plotModel = FALSE)
 
 #Perform dose-response for each thermogram parameter
 parameters <- compute_parameter.rssmodel(full_df, plotModel = TRUE)
