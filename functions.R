@@ -166,19 +166,19 @@ retrieveMoltenData <-
       arrange(., row)
     if (model == 'standard') {
       exp1_param <-
-        read_excel('./data/cleaned_expt1/Signal_resources/Signal_results.xlsx',
+        read_excel('./data/cleaned_expt1/Signal_results.xlsx',
                    sheet = 'Fit parameters') %>%
         dplyr::select(-c('Condition'))
       exp2_param <-
-        read_excel('./data/cleaned_expt2/Signal_resources/Signal_results.xlsx',
+        read_excel('./data/cleaned_expt2/Signal_results.xlsx',
                    sheet = 'Fit parameters') %>%
         dplyr::select(-c('Condition'))
       exp3_param <-
-        read_excel('./data/cleaned_expt3/Signal_resources/Signal_results.xlsx',
+        read_excel('./data/cleaned_expt3/Signal_results.xlsx',
                    sheet = 'Fit parameters') %>%
         dplyr::select(-c('Condition'))
       exp4_param <-
-        read_excel('./data/cleaned_expt4/Signal_resources/Signal_results.xlsx',
+        read_excel('./data/cleaned_expt4/Signal_results.xlsx',
                    sheet = 'Fit parameters') %>%
         dplyr::select(-c('Condition'))
       # Reformat ID column in each exp from MoltenProt format (A1, not A01) to arrange
@@ -283,18 +283,18 @@ retrieve_FittedCurves <-
       arrange(., row)
     if (model == 'baseline-fit') {
       exp1_curve <-
-        read_excel('./data/cleaned_expt1/Signal_resources/Signal_results.xlsx',
+        read_excel('./data/cleaned_expt1/Signal_results.xlsx',
                    sheet = 'Baseline-corrected')
       exp2_curve <-
-        read_excel('./data/cleaned_expt2/Signal_resources/Signal_results.xlsx',
+        read_excel('./data/cleaned_expt2/Signal_results.xlsx',
                    sheet = 'Baseline-corrected') %>%
         dplyr::select(-c('Temperature'))
       exp3_curve <-
-        read_excel('./data/cleaned_expt3/Signal_resources/Signal_results.xlsx',
+        read_excel('./data/cleaned_expt3/Signal_results.xlsx',
                    sheet = 'Baseline-corrected') %>%
         dplyr::select(-c('Temperature'))
       exp4_curve <-
-        read_excel('./data/cleaned_expt4/Signal_resources/Signal_results.xlsx',
+        read_excel('./data/cleaned_expt4/Signal_results.xlsx',
                    sheet = 'Baseline-corrected') %>%
         dplyr::select(-c('Temperature'))
       exp_curve_all <-
@@ -642,7 +642,8 @@ control_analysis <-
           ncol = 2,
           nrow = 1
         )
-      ggsave('./data/controls.png', dpi = 'retina', scale = 1.5)
+      ggsave('./data/controls.png', dpi = 'retina', scale = 1.5, width = 6, height = 9, units = 'in')
+      if (dev.cur() != 1) dev.off()
       return(control.grid)
     }
     if (output == 'df') {
@@ -810,7 +811,7 @@ dr_analysis <-
               res = 300
             )
             print(dr_plot)
-            dev.off()
+            if (dev.cur() != 1) dev.off()
           }
           print(n)
           # Extract fit parameters for the dr model
@@ -1030,8 +1031,12 @@ plot_volcanos <- function(df, save = TRUE) {
     ggsave(
       paste('./data/', current_param, '_volcano.png', sep = ''),
       dpi = 'retina',
-      scale = 1.25
+      scale = 1.25,
+    width = 6,
+    height = 9,
+    units = 'in'
     )
+    if (dev.cur() != 1) dev.off()
   }
 }
 
@@ -1059,8 +1064,12 @@ rss.pval.plot <- function (df, savePlot = FALSE) {
   if (savePlot == TRUE) {
     ggsave('./data/models/rssPvalcomp.png',
       dpi = 'retina',
-      scale = 1.25
+      scale = 1.25,
+    width = 6,
+    height = 9,
+    units = 'in'
     )
+    if (dev.cur() != 1) dev.off()
   }
 }
 
@@ -1137,8 +1146,7 @@ fit_nullmodel <- function(df,
       lwd = 3
     ))
     try(abline(null.model, col = 'black', lwd = 3))
-    try(dev.off()
-    )
+    if (dev.cur() != 1) dev.off()
   }
   #Return squared residuals for null model
   # message('NUll Model RSS: ',
@@ -1165,8 +1173,7 @@ fit_altmodel <- function(df,
       bg = 'cyan',
       lwd = 3
     ))
-    try(dev.off()
-    )
+    if (dev.cur() != 1) dev.off()
   }
   # message('Alternate Model RSS: ',
   #         (sum(residuals(alt.model) ^ 2)))
@@ -1300,8 +1307,12 @@ compute.rss.models <-
           filename = paste('./data/models/', current.fit.df[1, 1], '_rss.png', sep =
                              ''),
           scale = 1.25,
-          dpi = 'retina'
+          dpi = 'retina',
+          width = 6,
+          height = 9,
+          units = 'in'
         )
+        if (dev.cur() != 1) dev.off()
       }
     }
     return(rss.df)
@@ -1388,7 +1399,7 @@ compute_parameter.rssmodel <- function(df, plotModel = FALSE) {
               current_param
             )
           )
-          dev.off()
+          if (dev.cur() != 1) dev.off()
         }
       }
     }
@@ -1432,8 +1443,12 @@ dr.thermogram <- function(df, target = '') {
   ggsave(
     filename = paste('./data/models/dr_', target, '.png', sep = ''),
     scale = 1.25,
-    dpi = 'retina'
+    dpi = 'retina',
+    width = 6,
+    height = 9,
+    units = 'in'
   )
+  if (dev.cur() != 1) dev.off()
   return(dr.plot)
 }
 
@@ -1502,11 +1517,19 @@ parameter_heatmaps <- function(df, plotHeat = FALSE) {
     print(pval.heat.plot)
     ggsave('./data/pval_heatmap.png',
            dpi = 'retina',
-           scale = 1.25)
+           scale = 1.25,
+           width = 6,
+           height = 9,
+           units = 'in')
     print(ec50.heat.plot)
+    if (dev.cur() != 1) dev.off()
     ggsave('./data/ec50_heatmap.png',
            dpi = 'retina',
-           scale = 1.25)
+           scale = 1.25,
+           width = 6,
+           height = 9,
+           units = 'in')
+    if (dev.cur() != 1) dev.off()
   }
 }
 

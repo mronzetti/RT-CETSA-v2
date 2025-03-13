@@ -1,12 +1,12 @@
-# #  @@@@@@@   @@@@@@@              @@@@@@@  @@@@@@@@  @@@@@@@   @@@@@@    @@@@@@   
-# #  @@@@@@@@  @@@@@@@             @@@@@@@@  @@@@@@@@  @@@@@@@  @@@@@@@   @@@@@@@@  
-# #  @@!  @@@    @@!               !@@       @@!         @@!    !@@       @@!  @@@  
-# #  !@!  @!@    !@!               !@!       !@!         !@!    !@!       !@!  @!@  
-# #  @!@!!@!     @!!    @!@!@!@!@  !@!       @!!!:!      @!!    !!@@!!    @!@!@!@!  
-# #  !!@!@!      !!!    !!!@!@!!!  !!!       !!!!!:      !!!     !!@!!!   !!!@!!!!  
-# #  !!: :!!     !!:               :!!       !!:         !!:         !:!  !!:  !!!  
-# #  :!:  !:!    :!:               :!:       :!:         :!:        !:!   :!:  !:!  
-# #  ::   :::     ::                ::: :::   :: ::::     ::    :::: ::   ::   :::  
+# #  @@@@@@@   @@@@@@@              @@@@@@@  @@@@@@@@  @@@@@@@   @@@@@@    @@@@@@
+# #  @@@@@@@@  @@@@@@@             @@@@@@@@  @@@@@@@@  @@@@@@@  @@@@@@@   @@@@@@@@
+# #  @@!  @@@    @@!               !@@       @@!         @@!    !@@       @@!  @@@
+# #  !@!  @!@    !@!               !@!       !@!         !@!    !@!       !@!  @!@
+# #  @!@!!@!     @!!    @!@!@!@!@  !@!       @!!!:!      @!!    !!@@!!    @!@!@!@!
+# #  !!@!@!      !!!    !!!@!@!!!  !!!       !!!!!:      !!!     !!@!!!   !!!@!!!!
+# #  !!: :!!     !!:               :!!       !!:         !!:         !:!  !!:  !!!
+# #  :!:  !:!    :!:               :!:       :!:         :!:        !:!   :!:  !:!
+# #  ::   :::     ::                ::: :::   :: ::::     ::    :::: ::   ::   :::
 # # NonParametric Multiparameter Analysis of CETSA/RT-CETSA Experimental Sets
 # #
 # # Written by: Michael Ronzetti {NIH/NCATS/UMD}
@@ -14,6 +14,8 @@
 # # Main Analysis
 
 library(tidyverse)
+library(writexl)
+
 source('functions.R')
 # EXPERIMENTAL PARAMETERS AND SETUP
 #
@@ -65,7 +67,7 @@ print(controlPlot)
 #   convert_zscore
 
 #Derive RSS values for null and alternate model for each compound from full_df
-rss <- compute.rss.models(full_df, rssPlot = FALSE, drPlot = FALSE, plotModel = FALSE)
+rss <- compute.rss.models(full_df, rssPlot = TRUE, drPlot = TRUE, plotModel = TRUE)
 
 #Perform dose-response for each thermogram parameter
 parameters <- compute_parameter.rssmodel(full_df, plotModel = TRUE)
@@ -90,3 +92,7 @@ parameter_heatmaps(signif.df, plotHeat = TRUE)
 write.csv(x = full_df, file = './data/full_df.csv')
 write.csv(x = signif.df, file = './data/signif_df.csv')
 
+write_xlsx(list(
+  "Full df" = full_df,
+  "Significance" = signif.df
+), path = "./data/results.xlsx")
