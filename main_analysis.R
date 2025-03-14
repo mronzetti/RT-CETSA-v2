@@ -15,12 +15,11 @@
 
 library(tidyverse)
 library(writexl)
-
 source('functions.R')
+
 # EXPERIMENTAL PARAMETERS AND SETUP
 #
 # Input experiment parameters here
-
 startTemp <- 37
 endTemp <- 95
 plate_format <- 384
@@ -28,7 +27,7 @@ control <- 'vehicle'
 pc <- 'control'
 
 # Prepare the MatLab file for MoltenProt processing
-raw_df <-
+moltprot_df <-
   prepMatLabforMolt(file_loc = './data/example_plate.xlsx',
                     start_temp = startTemp,
                     end_temp = endTemp)
@@ -43,7 +42,6 @@ full_df <- full_param %>%
   plate_assignment(., './data/platemap.xlsx')
 full_df <- bind_fulldf(full_df, curve_df) %>%
   kelToCel(.)
-
 full_df <- calculate_auc(full_df)
 
 # Perform some preliminary control group analysis of variability
@@ -73,26 +71,38 @@ rss <- compute.rss.models(full_df, rssPlot = TRUE, drPlot = TRUE, plotModel = TR
 parameters <- compute_parameter.rssmodel(full_df, plotModel = TRUE)
 
 #Merge these plots for further analysis
-signif.df <- merge(rss, parameters)
-colnames(signif.df)[9] <- 'mannwhit.pval'
-signif.df <- determineSig(signif.df)
-signif.df <- rankOrder(signif.df)
+signif_df <- merge(rss, parameters)
+colnames(signif_df)[9] <- 'mannwhit.pval'
+signif_df <- determineSig(signif_df)
+signif_df <- rankOrder(signif_df)
 
 # Volcano plots comparing the different parameters of analysis against the NPARC RSS Difference
 # Colored by significance test and whether the compound passes any.
-plot_volcanos(signif.df)
-
+#plot_volcanos(signif_df)
 # Plot of RSS Differences vs. p-values for NPARC
-rss.pval.plot(signif.df, savePlot = TRUE)
-
+#rss.pval.plot(signif_df, savePlot = FALSE)
 #Heatmap of compounds vs. different measurement styles.
-parameter_heatmaps(signif.df, plotHeat = TRUE)
+parameter_heatmaps(signif_df, plotHeat = TRUE)
 
-#Write out signif.df and full_df
-write.csv(x = full_df, file = './data/full_df.csv')
-write.csv(x = signif.df, file = './data/signif_df.csv')
+# Pull out raw data for reference #
+raw_param <- retrieveMoltenData(model = 'standard')
+raw_curves <- retrieve_FittedCurves(model = "raw_data",
+                                  start_temp = startTemp,
+                                  end_temp = endTemp)
+raw_df <- raw_param %>% plate_assignment(., './data/platemap.xlsx')
+raw_df <- cbind(raw_param, raw_curves) %>%
+  plate_assignment(., './data/platemap.xlsx') %>%
+  kelToCel(.)
+raw_df <- calculate_auc(raw_df)
 
+# Single temp analysis
+tmFit_df <- findClosestTmColumn(raw_df)
+tmFit_fits <- fitRawTmData(tmFit_df)
+
+# Write out all data from analysis
 write_xlsx(list(
-  "Full df" = full_df,
-  "Significance" = signif.df
+  "Raw data" = raw_df,
+  "Raw data fits" = tmFit_fits,
+  "NPARC" = full_df,
+  "Significance tests" = signif_df
 ), path = "./data/results.xlsx")

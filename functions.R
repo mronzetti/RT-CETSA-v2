@@ -43,9 +43,9 @@ construct_grid <-
     if (pad_num == FALSE) {
       grid <-
         expand.grid(row = LETTERS[1:(row_num)], col = c(1:(col_num))) %>%
-        arrange(row) %>%
-        mutate(address = paste(row, col, sep = '')) %>%
-        dplyr::select(-c('row', 'col'))
+          arrange(row) %>%
+          mutate(address = paste(row, col, sep = '')) %>%
+          dplyr::select(-c('row', 'col'))
     } else {
       letter <- LETTERS[1:(row_num)]
       number <- c(1:(col_num))
@@ -53,7 +53,7 @@ construct_grid <-
       col_by_row <-
         expand.grid(row = sprintf('%.2d', 1:16),
                     col = sprintf('%.2d', 1:24)) %>%
-        arrange(., row)
+          arrange(., row)
     }
     return(grid)
   }
@@ -97,27 +97,22 @@ prepMatLabforMolt <- function(file_loc = './data/rtcetsa_raw.xlsx',
     dplyr::select(-c('...1', '...2')) %>%
     rownames_to_column() %>%
     rename('well' = 'rowname')
-  
-  # Construct temperature index (t_n) and pivot around the data to tidy
-  tracker <- 1
-  for (val in 2:ncol(df) - 1) {
-    names(df)[val + 1] <- paste('t_', val, sep = '')
-    tracker <- tracker + 1
-  }
+  df <- df %>%
+    rename_with(~paste0("t_", seq_along(.)), -well)
   df <- df %>%
     pivot_longer(., cols = 2:ncol(df)) %>%
     pivot_wider(names_from = well) %>%
     rename(., 'Temperature' = 'name') %>%
     mutate(., Temperature = as.integer(gsub("[^0-9.]", "", Temperature)))
-  
+
   #Create temperature index in line with experimental parameters supplied in main script
   temperature_df <-
     seq(start_temp, end_temp, by = ((end_temp - start_temp) / (nrow(df) -
-                                                                 1))) %>%
-    round(., digits = 1)
+      1))) %>%
+      round(., digits = 1)
   for (i in 1:length(temperature_df))
     df$Temperature[i] <- temperature_df[i]
-  
+
   # Assemble data for moltenprot analysis by splitting 384-well plate to 96-well plate with appropriate index
   grid_96w <- construct_grid(row_num = 8, col_num = 12)
   q1 <- df %>%
@@ -152,7 +147,7 @@ prepMatLabforMolt <- function(file_loc = './data/rtcetsa_raw.xlsx',
   write.csv(q2, './data/cleaned_expt2.csv', row.names = FALSE)
   write.csv(q3, './data/cleaned_expt3.csv', row.names = FALSE)
   write.csv(q4, './data/cleaned_expt4.csv', row.names = FALSE)
-  
+
   return(df)
 }
 
@@ -163,24 +158,24 @@ retrieveMoltenData <-
     # Retrieve experimental data from processed file folders
     col_by_row <-
       expand.grid(row = sprintf('%.2d', 1:16), col = sprintf('%.2d', 1:24)) %>%
-      arrange(., row)
+        arrange(., row)
     if (model == 'standard') {
       exp1_param <-
         read_excel('./data/cleaned_expt1/Signal_results.xlsx',
                    sheet = 'Fit parameters') %>%
-        dplyr::select(-c('Condition'))
+          dplyr::select(-c('Condition'))
       exp2_param <-
         read_excel('./data/cleaned_expt2/Signal_results.xlsx',
                    sheet = 'Fit parameters') %>%
-        dplyr::select(-c('Condition'))
+          dplyr::select(-c('Condition'))
       exp3_param <-
         read_excel('./data/cleaned_expt3/Signal_results.xlsx',
                    sheet = 'Fit parameters') %>%
-        dplyr::select(-c('Condition'))
+          dplyr::select(-c('Condition'))
       exp4_param <-
         read_excel('./data/cleaned_expt4/Signal_results.xlsx',
                    sheet = 'Fit parameters') %>%
-        dplyr::select(-c('Condition'))
+          dplyr::select(-c('Condition'))
       # Reformat ID column in each exp from MoltenProt format (A1, not A01) to arrange
       exp1_param$ID <-
         gsub('([A-Z])(\\d)(?!\\d)', '\\10\\2\\3', exp1_param$ID, perl = TRUE)
@@ -196,28 +191,30 @@ retrieveMoltenData <-
       exp4_param <- exp4_param %>% arrange(ID)
       # Combine all experiments and add identifiers
       exp_param_full <-
-        exp1_param %>% rbind(., exp2_param, exp3_param, exp4_param) %>%
-        rownames_to_column() %>% rename('well' = 'rowname') %>%
-        dplyr::select(
-          -c(
-            'ID',
-            'kN_init',
-            'bN_init',
-            'kU_init',
-            'bU_init',
-            'dHm_init',
-            'Tm_init',
-            'kN_fit',
-            'bN_fit',
-            'kU_fit',
-            'bU_fit',
-            'S',
-            'dCp_component'
-          )
-        ) %>%
-        bind_cols(col_by_row) %>%
-        relocate(c('row', 'col'), .after = well) %>%
-        dplyr::select(-'well')
+        exp1_param %>%
+          rbind(., exp2_param, exp3_param, exp4_param) %>%
+          rownames_to_column() %>%
+          rename('well' = 'rowname') %>%
+          dplyr::select(
+            -c(
+              'ID',
+              'kN_init',
+              'bN_init',
+              'kU_init',
+              'bU_init',
+              'dHm_init',
+              'Tm_init',
+              'kN_fit',
+              'bN_fit',
+              'kU_fit',
+              'bU_fit',
+              'S',
+              'dCp_component'
+            )
+          ) %>%
+          bind_cols(col_by_row) %>%
+          relocate(c('row', 'col'), .after = well) %>%
+          dplyr::select(-'well')
       exp_param_full <- well_assignment(exp_param_full, 384)
       return(exp_param_full)
     }
@@ -225,19 +222,19 @@ retrieveMoltenData <-
       exp1_param <-
         read_excel('./data/cleaned_expt1/Signal_resources/Signal_results.xlsx',
                    sheet = 'Fit parameters') %>%
-        dplyr::select(-c('Condition'))
+          dplyr::select(-c('Condition'))
       exp2_param <-
         read_excel('./data/cleaned_expt2/Signal_resources/Signal_results.xlsx',
                    sheet = 'Fit parameters') %>%
-        dplyr::select(-c('Condition'))
+          dplyr::select(-c('Condition'))
       exp3_param <-
         read_excel('./data/cleaned_expt3/Signal_resources/Signal_results.xlsx',
                    sheet = 'Fit parameters') %>%
-        dplyr::select(-c('Condition'))
+          dplyr::select(-c('Condition'))
       exp4_param <-
         read_excel('./data/cleaned_expt4/Signal_resources/Signal_results.xlsx',
                    sheet = 'Fit parameters') %>%
-        dplyr::select(-c('Condition'))
+          dplyr::select(-c('Condition'))
       # Reformat ID column in each exp from MoltenProt format (A1, not A01) to arrange
       exp1_param$ID <-
         gsub('([A-Z])(\\d)(?!\\d)', '\\10\\2\\3', exp1_param$ID, perl = TRUE)
@@ -253,21 +250,23 @@ retrieveMoltenData <-
       exp4_param <- exp4_param %>% arrange(ID)
       # Combine all experiments and add identifiers
       exp_param_full <-
-        exp1_param %>% rbind(., exp2_param, exp3_param, exp4_param) %>%
-        rownames_to_column() %>% rename('well' = 'rowname') %>%
-        dplyr::select(c(
-          'well',
-          'Ea_fit',
-          'Tf_fit',
-          'kN_fit',
-          'bN_fit',
-          'kU_fit',
-          'bU_fit',
-          'S'
-        )) %>%
-        bind_cols(col_by_row) %>%
-        relocate(c('row', 'col'), .after = well) %>%
-        dplyr::select(-'well')
+        exp1_param %>%
+          rbind(., exp2_param, exp3_param, exp4_param) %>%
+          rownames_to_column() %>%
+          rename('well' = 'rowname') %>%
+          dplyr::select(c(
+            'well',
+            'Ea_fit',
+            'Tf_fit',
+            'kN_fit',
+            'bN_fit',
+            'kU_fit',
+            'bU_fit',
+            'S'
+          )) %>%
+          bind_cols(col_by_row) %>%
+          relocate(c('row', 'col'), .after = well) %>%
+          dplyr::select(-'well')
       exp_param_full <- well_assignment(exp_param_full, 384)
       return(exp_param_full)
     }
@@ -280,7 +279,7 @@ retrieve_FittedCurves <-
            end_temp = 90) {
     col_by_row <-
       expand.grid(row = sprintf('%.2d', 1:16), col = sprintf('%.2d', 1:24)) %>%
-      arrange(., row)
+        arrange(., row)
     if (model == 'baseline-fit') {
       exp1_curve <-
         read_excel('./data/cleaned_expt1/Signal_results.xlsx',
@@ -288,15 +287,15 @@ retrieve_FittedCurves <-
       exp2_curve <-
         read_excel('./data/cleaned_expt2/Signal_results.xlsx',
                    sheet = 'Baseline-corrected') %>%
-        dplyr::select(-c('Temperature'))
+          dplyr::select(-c('Temperature'))
       exp3_curve <-
         read_excel('./data/cleaned_expt3/Signal_results.xlsx',
                    sheet = 'Baseline-corrected') %>%
-        dplyr::select(-c('Temperature'))
+          dplyr::select(-c('Temperature'))
       exp4_curve <-
         read_excel('./data/cleaned_expt4/Signal_results.xlsx',
                    sheet = 'Baseline-corrected') %>%
-        dplyr::select(-c('Temperature'))
+          dplyr::select(-c('Temperature'))
       exp_curve_all <-
         cbind(
           xp1 = exp1_curve,
@@ -304,12 +303,13 @@ retrieve_FittedCurves <-
           xp3 = exp3_curve,
           xp4 = exp4_curve
         ) %>%
-        rename(., Temperature = xp1.Temperature) %>%
-        mutate(., Temperature = paste('val_t_', Temperature, sep = ''))
+          rename(., Temperature = xp1.Temperature) %>%
+          mutate(., Temperature = paste('val_t_', Temperature, sep = ''))
       exp_curve_all <- exp_curve_all %>%
         pivot_longer(cols = 2:ncol(exp_curve_all)) %>%
         pivot_wider(names_from = Temperature) %>%
-        rownames_to_column() %>% rename('well' = 'rowname') %>%
+        rownames_to_column() %>%
+        rename('well' = 'rowname') %>%
         bind_cols(col_by_row) %>%
         dplyr::select(-c('name', 'well', 'row', 'col')) %>%
         add_tempheaders(., start_temp, end_temp)
@@ -323,15 +323,15 @@ retrieve_FittedCurves <-
       exp2_curve <-
         read_excel('./data/cleaned_expt2/Signal_resources/Signal_results.xlsx',
                    sheet = 'Fit curves') %>%
-        dplyr::select(-c('Temperature'))
+          dplyr::select(-c('Temperature'))
       exp3_curve <-
         read_excel('./data/cleaned_expt3/Signal_resources/Signal_results.xlsx',
                    sheet = 'Fit curves') %>%
-        dplyr::select(-c('Temperature'))
+          dplyr::select(-c('Temperature'))
       exp4_curve <-
         read_excel('./data/cleaned_expt4/Signal_resources/Signal_results.xlsx',
                    sheet = 'Fit curves') %>%
-        dplyr::select(-c('Temperature'))
+          dplyr::select(-c('Temperature'))
       exp_curve_all <-
         cbind(
           xp1 = exp1_curve,
@@ -339,12 +339,49 @@ retrieve_FittedCurves <-
           xp3 = exp3_curve,
           xp4 = exp4_curve
         ) %>%
-        rename(., Temperature = xp1.Temperature) %>%
-        mutate(., Temperature = paste('val_t_', Temperature, sep = ''))
+          rename(., Temperature = xp1.Temperature) %>%
+          mutate(., Temperature = paste('val_t_', Temperature, sep = ''))
       exp_curve_all <- exp_curve_all %>%
         pivot_longer(cols = 2:ncol(exp_curve_all)) %>%
         pivot_wider(names_from = Temperature) %>%
-        rownames_to_column() %>% rename('well' = 'rowname') %>%
+        rownames_to_column() %>%
+        rename('well' = 'rowname') %>%
+        bind_cols(col_by_row) %>%
+        dplyr::select(-c('name', 'well', 'row', 'col')) %>%
+        add_tempheaders(., start_temp, end_temp)
+      message('Fit curves retrieved.')
+      return(exp_curve_all)
+    }
+    if (model == 'raw_data') {
+      exp1_curve <-
+        read_excel('./data/cleaned_expt1/Signal_resources/Signal_results.xlsx',
+                   sheet = 'Raw data')
+      exp2_curve <-
+        read_excel('./data/cleaned_expt2/Signal_resources/Signal_results.xlsx',
+                   sheet = 'Raw data') %>%
+          dplyr::select(-c('Temperature'))
+      exp3_curve <-
+        read_excel('./data/cleaned_expt3/Signal_resources/Signal_results.xlsx',
+                   sheet = 'Raw data') %>%
+          dplyr::select(-c('Temperature'))
+      exp4_curve <-
+        read_excel('./data/cleaned_expt4/Signal_resources/Signal_results.xlsx',
+                   sheet = 'Raw data') %>%
+          dplyr::select(-c('Temperature'))
+      exp_curve_all <-
+        cbind(
+          xp1 = exp1_curve,
+          xp2 = exp2_curve,
+          xp3 = exp3_curve,
+          xp4 = exp4_curve
+        ) %>%
+          rename(., Temperature = xp1.Temperature) %>%
+          mutate(., Temperature = paste('val_t_', Temperature, sep = ''))
+      exp_curve_all <- exp_curve_all %>%
+        pivot_longer(cols = 2:ncol(exp_curve_all)) %>%
+        pivot_wider(names_from = Temperature) %>%
+        rownames_to_column() %>%
+        rename('well' = 'rowname') %>%
         bind_cols(col_by_row) %>%
         dplyr::select(-c('name', 'well', 'row', 'col')) %>%
         add_tempheaders(., start_temp, end_temp)
@@ -365,6 +402,7 @@ kelToCel <- function(df) {
     mutate(Tm_fit = Tm_fit - 273.15) %>%
     mutate(T_onset = T_onset - 273.15)
 }
+
 # #
 # ISO-CETSA Functions (new)
 # #
@@ -375,7 +413,7 @@ add_tempheaders <- function(df,
                             end_temp = 90) {
   temperature_df <-
     seq(start_temp, end_temp, by = ((end_temp - start_temp) / (ncol(df) - 1))) %>%
-    round(., digits = 1)
+      round(., digits = 1)
   for (i in 1:ncol(df)) {
     colnames(df)[i] <- paste('t_', temperature_df[i], sep = '')
   }
@@ -390,13 +428,13 @@ add_rowcol <- function(df, well_num) {
   if (well_num == 96) {
     col_by_row <-
       expand.grid(row = sprintf('%.2d', 1:8), col = sprintf('%.2d', 1:12)) %>%
-      arrange(., row)
+        arrange(., row)
   }
   else if (well_num == 384) {
     col_by_row <-
       expand.grid(row = sprintf('%.2d', 1:16),
                   col = sprintf('%.2d', 1:24)) %>%
-      arrange(., row)
+        arrange(., row)
   }
   message('Row + Column assignments created for ',
           well_num,
@@ -463,10 +501,10 @@ calculate_auc <- function(df) {
   #Retrieve temperatures to be used for AUC determination.
   auc.df <- df %>%
     dplyr::select(matches('t_\\d'))
-  
+
   #Initialize the AUC column
   df$auc <- NA
-  
+
   # Pivot and clean each row for AUC model
   for (i in 1:nrow(auc.df)) {
     curveVals <- as_tibble(auc.df[i,]) %>%
@@ -503,7 +541,7 @@ control_variability <-
     pc.controls.df <- df %>%
       filter(ncgc_id == pc) %>%
       dplyr::select(-c('ncgc_id', 'well', 'row', 'col'))
-    
+
     #Calculate means, sd, and %CV
     nc.mean.df <-
       apply(nc.controls.df[1:ncol(nc.controls.df)], 2, mean)
@@ -511,7 +549,7 @@ control_variability <-
     pc.mean.df <-
       apply(pc.controls.df[1:ncol(pc.controls.df)], 2, mean)
     pc.sd.df <- apply(pc.controls.df[1:ncol(pc.controls.df)], 2, sd)
-    
+
     #Calculate %CV
     nc.var.df <- tibble(nc.mean = nc.mean.df, nc.sd = nc.sd.df) %>%
       mutate(nc.cv = (nc.sd / nc.mean) * 100)
@@ -577,7 +615,7 @@ control_analysis <-
            controlDF) {
     controls.df <- df %>%
       filter(ncgc_id == nc | ncgc_id == pc)
-    
+
     #Calculate Z' from controls for each parameter
     test_params <-
       c('Tm_fit',
@@ -590,7 +628,7 @@ control_analysis <-
     Tm.pc.sd <- sd(controls.df$Tm_fit[controls.df$ncgc_id == pc])
     Tm.z <-
       1 - (((3 * Tm.pc.sd) + (3 * Tm.nc.sd)) / abs(Tm.pc.mean - Tm.nc.mean))
-    
+
     message('Z\' for Tm: ', signif(Tm.z))
     auc.nc.mean <- mean(controls.df$auc[controls.df$ncgc_id == nc])
     auc.nc.sd <- sd(controls.df$auc[controls.df$ncgc_id == nc])
@@ -599,40 +637,40 @@ control_analysis <-
     auc.z <-
       1 - (((3 * auc.pc.sd) + (3 * auc.nc.sd)) / abs(auc.pc.mean - auc.nc.mean))
     message('Z\' for AUC: ', signif(auc.z))
-    
+
     if (output == 'plot') {
       Tm.plot <-
         ggplot(controls.df, aes(x = ncgc_id, y = Tm_fit, fill = ncgc_id)) +
-        geom_boxplot(outlier.alpha = 0, size = 0.75) +
-        geom_jitter(shape = 21, size = 3) +
-        theme_minimal() +
-        scale_fill_hue() +
-        labs(title = 'Controls | Tagg',
-             subtitle = paste('Z\': ', signif(Tm.z), sep = '')) +
-        theme(
-          legend.position = 'none',
-          axis.title.x = element_blank(),
-          axis.text.x = element_text(size = 12, face = 'bold'),
-          axis.text.y = element_text(size = 10),
-          axis.title.y = element_text(size = 12, face = 'bold'),
-          plot.title = element_text(size = 12, face = 'bold')
-        )
+          geom_boxplot(outlier.alpha = 0, size = 0.75) +
+          geom_jitter(shape = 21, size = 3) +
+          theme_minimal() +
+          scale_fill_hue() +
+          labs(title = 'Controls | Tagg',
+               subtitle = paste('Z\': ', signif(Tm.z), sep = '')) +
+          theme(
+            legend.position = 'none',
+            axis.title.x = element_blank(),
+            axis.text.x = element_text(size = 12, face = 'bold'),
+            axis.text.y = element_text(size = 10),
+            axis.title.y = element_text(size = 12, face = 'bold'),
+            plot.title = element_text(size = 12, face = 'bold')
+          )
       auc.plot <-
         ggplot(controls.df, aes(x = ncgc_id, y = auc, fill = ncgc_id)) +
-        geom_boxplot(outlier.alpha = 0, size = 0.75) +
-        geom_jitter(shape = 21, size = 3) +
-        theme_minimal() +
-        scale_fill_hue() +
-        labs(title = 'Controls | AUC',
-             subtitle = paste('Z\': ', signif(auc.z), sep = '')) +
-        theme(
-          legend.position = 'none',
-          axis.title.x = element_blank(),
-          axis.text.x = element_text(size = 12, face = 'bold'),
-          axis.text.y = element_text(size = 10),
-          axis.title.y = element_text(size = 12, face = 'bold'),
-          plot.title = element_text(size = 12, face = 'bold')
-        )
+          geom_boxplot(outlier.alpha = 0, size = 0.75) +
+          geom_jitter(shape = 21, size = 3) +
+          theme_minimal() +
+          scale_fill_hue() +
+          labs(title = 'Controls | AUC',
+               subtitle = paste('Z\': ', signif(auc.z), sep = '')) +
+          theme(
+            legend.position = 'none',
+            axis.title.x = element_blank(),
+            axis.text.x = element_text(size = 12, face = 'bold'),
+            axis.text.y = element_text(size = 10),
+            axis.title.y = element_text(size = 12, face = 'bold'),
+            plot.title = element_text(size = 12, face = 'bold')
+          )
       right.grid <-
         plot_grid(Tm.plot, auc.plot, ncol = 1)
       control.grid <-
@@ -642,7 +680,7 @@ control_analysis <-
           ncol = 2,
           nrow = 1
         )
-      ggsave('./data/controls.png', dpi = 'retina', scale = 1.5, width = 6, height = 9, units = 'in')
+      ggsave('./data/figures/controls.png', dpi = 'retina', scale = 1.5, width = 16, height = 9, units = 'in')
       if (dev.cur() != 1) dev.off()
       return(control.grid)
     }
@@ -689,25 +727,25 @@ dr_analysis <-
       tibble(compound = (unique(filter(
         df, ncgc_id != control
       )$ncgc_id))) %>%
-      filter(compound != 'control')
+        filter(compound != 'control')
     for (i in 6:ncol(df)) {
       col.nm <- colnames(df)[i]
       model_df[, col.nm] <- NA
     }
-    
+
     # Make a long df with the parameters (colnames above)
     modelfit_df <- tibble(colnames(model_df)[2:ncol(model_df)])
     names(modelfit_df)[1] <- 'analysis'
-    
+
     # Loop through each column in every row of modelfit_df and create a drm model for each and
     # add statistics and readouts to a temp df that is bound to modelfit_df
     for (i in 1:nrow(model_df)) {
       # Create a working df with the raw data from compound[i]
       temp_df <-
         filter(df, df$ncgc_id == model_df$compound[(i)]) %>%
-        dplyr::select(-c('well', 'row', 'col'))
+          dplyr::select(-c('well', 'row', 'col'))
       print(paste('Analyzing: ', model_df$compound[i]), sep = '')
-      
+
       # This temp df will hold the statistics that we read out from each model, and is reset every time.
       # Parameters to include:
       # ec50: EC50 reading of the curve fit
@@ -853,14 +891,14 @@ dmso_rss <- function(df, control = 'DMSO') {
   df_rss$conc <- as.integer(gsub('t_', '', df_rss$conc))
   message('Fitting DMSO thermogram...')
   rss_model <- dr_fit(df_rss)
-  rss_dmso <- sum(residuals(rss_model) ^ 2)
+  rss_dmso <- sum(residuals(rss_model)^2)
   message('DMSO RSS: ', signif(rss_dmso, 6))
   plot(
     rss_model,
     type = 'all',
     cex = 0.5,
     main = paste('DMSO Thermogram Fit\n', 'RSS: ', signif(rss_dmso, 5), sep =
-                   ''),
+      ''),
     sub = paste('DMSO RSS: ', signif(rss_dmso, 5), sep = ''),
     xlab = 'Temperature',
     ylab = 'Fraction Unfolded',
@@ -870,36 +908,37 @@ dmso_rss <- function(df, control = 'DMSO') {
 }
 
 compare_models <- function(df, dmso.rss.df, plot = FALSE) {
-  temp_df <- df %>% dplyr::select(-one_of(
-    'Ea_fit',
-    'Tf_fit',
-    'kN_fit',
-    'bN_fit',
-    'kU_fit',
-    'bU_fit',
-    'S'
-  )) %>%
+  temp_df <- df %>%
+    dplyr::select(-one_of(
+      'Ea_fit',
+      'Tf_fit',
+      'kN_fit',
+      'bN_fit',
+      'kU_fit',
+      'bU_fit',
+      'S'
+    )) %>%
     filter(ncgc_id != 'DMSO' & ncgc_id != 'ignore')
   rss_df <- temp_df %>%
     dplyr::select(-starts_with('t_'))
   rss_df$null.rss <- NA
   rss_df$alt.rss <- NA
   rss_df$rss.diff <- NA
-  
+
   dmso.model <- dr_fit(dmso.rss.df)
-  dmso.rss <- sum(residuals(dmso.model) ^ 2)
+  dmso.rss <- sum(residuals(dmso.model)^2)
   for (i in 1:nrow(temp_df)) {
-    cmpnd.df <- temp_df[i, ] %>%
+    cmpnd.df <- temp_df[i,] %>%
       dplyr::select(starts_with('t_')) %>%
       pivot_longer(cols = everything())
     colnames(cmpnd.df)[1] <- 'conc'
     colnames(cmpnd.df)[2] <- 'resp'
     cmpnd.df$conc <- as.integer(gsub('t_', '', cmpnd.df$conc))
-    
+
     # Fitting the null model
     null.model <- bind_rows(dmso.rss.df, cmpnd.df)
     null.drm <- dr_fit(null.model)
-    null.rss <- sum(residuals(null.drm) ^ 2)
+    null.rss <- sum(residuals(null.drm)^2)
     rss_df$null.rss[i] <- null.rss
     message(
       'Null model for ',
@@ -917,10 +956,10 @@ compare_models <- function(df, dmso.rss.df, plot = FALSE) {
     }
     # Fitting the alternate model
     cmpnd.drm <- dr_fit(cmpnd.df)
-    cmpnd.rss <- sum(residuals(cmpnd.drm) ^ 2)
+    cmpnd.rss <- sum(residuals(cmpnd.drm)^2)
     alt.rss <- sum(cmpnd.rss, dmso.rss)
     rss_df$alt.rss[i] <- alt.rss
-    message (
+    message(
       'Alternate Model for ',
       temp_df$ncgc_id[i],
       ' at concentration \' ',
@@ -937,26 +976,26 @@ compare_models <- function(df, dmso.rss.df, plot = FALSE) {
 
 # Calculate the traditional melting parameters from the full + rss model and output df
 # of the parameters for each compound
-calculate_meltingparams <- function (df, control = 'vehicle') {
+calculate_meltingparams <- function(df, control = 'vehicle') {
   #Standard parameters to test:
   test_params <- c('dHm_fit', 'Tm_fit', 'dG_std', 'T_onset')
-  
+
   #Set up to loop through entire dataframe for each of the above params
   for (i in 1:length(test_params)) {
     #Initialize the column name
     current_param <- test_params[i]
     df[, paste(current_param, '_diff', sep = '')] <- NA
-    
+
     #First, calculate the mean of control columns
     mean_control <- mean(df[[current_param]][df$ncgc_id == control])
-    
+
     #Then, subtract this mean value from each well in the plate in a new column.
     #Can't figure out how to mutate with a pasted column name...
     for (i in 1:nrow(df)) {
       df[i, paste(current_param, '_diff', sep = '')] <-
         df[i, current_param] - mean_control
     }
-    
+
     #Print out mean and stdev of vehicle for each condition
     std_control <- sd(df[[current_param]][df$ncgc_id == control])
     message('Vehicle mean for ',
@@ -978,7 +1017,7 @@ plot_volcanos <- function(df, save = TRUE) {
   test_pval <-
     c('Tm_fit.maxDiff',
       'auc.maxDiff')
-  
+
   # Plot out RSS Difference(x) vs. Parameter Difference(y)
   # Conditional fill: grey/alpha if not significant in either
   #   grey/alpha if not significant in either #DDDDDD
@@ -998,15 +1037,15 @@ plot_volcanos <- function(df, save = TRUE) {
     # Assign significance testing outcomes
     plot.df$sigVal <-
       case_when((plot.df$mannwhit.pval < 0.05 &
-                   plot.df[, current_pval] < 0.05) ~ 'Both',
+        plot.df[, current_pval] < 0.05) ~ 'Both',
                 (plot.df$mannwhit.pval < 0.05 &
-                   plot.df[, current_pval] >= 0.05) ~ 'RSS NPARC',
+                  plot.df[, current_pval] >= 0.05) ~ 'RSS NPARC',
                 (plot.df$mannwhit.pval >= 0.05 &
-                   plot.df[, current_pval] < 0.05) ~ 'Parameter',
+                  plot.df[, current_pval] < 0.05) ~ 'Parameter',
                 (plot.df$mannwhit.pval >= 0.05 &
-                   plot.df[, current_pval] >= 0.05) ~ 'Insignificant'
+                  plot.df[, current_pval] >= 0.05) ~ 'Insignificant'
       )
-    
+
     fillvalues <-
       c('Both', 'RSS NPARC', 'Parameter', 'Insignificant')
     colors <- c('#882255', '#EE7733', '#009988', '#DDDDDD')
@@ -1015,59 +1054,59 @@ plot_volcanos <- function(df, save = TRUE) {
              aes(x = rss.diff,
                  y = plot.df[, current_param],
                  label = compound)) +
-      geom_point(shape = 21,
-                 aes(fill = sigVal),
-                 size = 5) +
-      theme_minimal() +
-      labs(
-        title = paste('Residual Variance vs. ', current_param, sep = ''),
-        y = paste(current_param, ' Experimental - Vehicle Mean', sep = ''),
-        x = 'RSS0 - RSS1 NPARC',
-        fill = 'Significance Detected'
-      ) +
-      scale_fill_manual(breaks = fillvalues, values = colors) +
-      theme(legend.position = 'bottom')
+        geom_point(shape = 21,
+                   aes(fill = sigVal),
+                   size = 5) +
+        theme_minimal() +
+        labs(
+          title = paste('Residual Variance vs. ', current_param, sep = ''),
+          y = paste(current_param, ' Experimental - Vehicle Mean', sep = ''),
+          x = 'RSS0 - RSS1 NPARC',
+          fill = 'Significance Detected'
+        ) +
+        scale_fill_manual(breaks = fillvalues, values = colors) +
+        theme(legend.position = 'bottom')
     print(volcano_plot)
     ggsave(
-      paste('./data/', current_param, '_volcano.png', sep = ''),
+      paste('./data/figures/', current_param, '_volcano.png', sep = ''),
       dpi = 'retina',
       scale = 1.25,
-    width = 6,
-    height = 9,
-    units = 'in'
+      width = 6,
+      height = 9,
+      units = 'in'
     )
     if (dev.cur() != 1) dev.off()
   }
 }
 
 # Plot out RSS Difference by p-value for the MannWhitney
-rss.pval.plot <- function (df, savePlot = FALSE) {
+rss.pval.plot <- function(df, savePlot = FALSE) {
   plot.df <- df %>%
     dplyr::select(compound, rss.diff, mannwhit.pval, mannwhit.ec50)
   plot.df$mannwhit.pval <- log2(plot.df$mannwhit.pval)
-  
+
   rss.plot <-
     ggplot(plot.df,
            aes(x = rss.diff, y = mannwhit.pval, fill = mannwhit.ec50)) +
-    geom_point(shape = 21, size = 3.5) +
-    theme_minimal() +
-    scale_fill_gradient(low = '#EE3377',
-                        high = '#88CCEE',
-                        na.value = 'grey20') +
-    labs(
-      title = 'RSS vs. Mann Whitney P-val',
-      x = 'RSS0 - RSS1',
-      y = 'Log2 Mann Whitney P-val',
-      fill = 'NPARC EC50'
-    )
+      geom_point(shape = 21, size = 3.5) +
+      theme_minimal() +
+      scale_fill_gradient(low = '#EE3377',
+                          high = '#88CCEE',
+                          na.value = 'grey20') +
+      labs(
+        title = 'RSS vs. Mann Whitney P-val',
+        x = 'RSS0 - RSS1',
+        y = 'Log2 Mann Whitney P-val',
+        fill = 'NPARC EC50'
+      )
   print(rss.plot)
   if (savePlot == TRUE) {
     ggsave('./data/models/rssPvalcomp.png',
-      dpi = 'retina',
-      scale = 1.25,
-    width = 6,
-    height = 9,
-    units = 'in'
+           dpi = 'retina',
+           scale = 1.25,
+           width = 6,
+           height = 9,
+           units = 'in'
     )
     if (dev.cur() != 1) dev.off()
   }
@@ -1082,7 +1121,7 @@ parameter_doseresponse <-
         df, ncgc_id != control
       )$ncgc_id)))
     for (i in 1:nrow(parameter_df)) {
-      
+
     }
   }
 
@@ -1112,7 +1151,7 @@ convert_zscore <- function(df, control = 'vehicle', plot = FALSE) {
     mean_control <- mean(df[[current_param]][df$ncgc_id == control])
     std_control <- sd(df[[current_param]][df$ncgc_id == control])
     df[, paste(current_param, '_pval', sep = '')] <- NA
-    
+
     #Calculate p value for normal distribution from z score for each column.
     for (i in 1:nrow(df)) {
       df[i, paste(current_param, '_pval', sep = '')] <-
@@ -1134,7 +1173,7 @@ fit_nullmodel <- function(df,
   #Plot if TRUE. For diagnostic use mostly...
   if (plot.model == TRUE) {
     try(jpeg(filename = paste('./data/models/', graphTitle, '.jpg', sep =
-                                '')))
+      '')))
     try(plot(
       df$conc,
       df$resp,
@@ -1151,7 +1190,7 @@ fit_nullmodel <- function(df,
   #Return squared residuals for null model
   # message('NUll Model RSS: ',
   #         (sum(residuals(null.model) ^ 2)))
-  return(sum(residuals(null.model) ^ 2))
+  return(sum(residuals(null.model)^2))
 }
 
 # Fit the alternate model log logistic to a set of conc ~ resp values.
@@ -1163,7 +1202,7 @@ fit_altmodel <- function(df,
   alt.model <- dr_fit(df)
   if (plot.model == TRUE) {
     try(jpeg(filename = paste('./data/models/', graphTitle, '.jpg', sep =
-                                '')))
+      '')))
     try(plot(
       alt.model,
       main = graphTitle,
@@ -1177,7 +1216,7 @@ fit_altmodel <- function(df,
   }
   # message('Alternate Model RSS: ',
   #         (sum(residuals(alt.model) ^ 2)))
-  return(sum(residuals(alt.model) ^ 2))
+  return(sum(residuals(alt.model)^2))
 }
 
 # Derive RSS values for null and alternate model for each compound from full_df
@@ -1202,25 +1241,26 @@ compute.rss.models <-
     rss.df$rss.diff <- NA
     rss.df$mannwhit.pval <- NA
     rss.df$mannwhit.ec50 <- NA
-    
+
     for (i in 1:nrow(rss.df)) {
       #Construct df for current compound
-      fit.df <- df %>% filter(ncgc_id == toString(rss.df[i, 1])) %>%
+      fit.df <- df %>%
+        filter(ncgc_id == toString(rss.df[i, 1])) %>%
         dplyr::select(ncgc_id, conc, starts_with('t_')) %>%
         dplyr::select(!contains('onset'))
-      
+
       #Plot out dose-response thermogram here?
       if (drPlot == TRUE) {
         dr.thermogram(fit.df, target = rss.df$compound[i])
       }
-      
+
       #Construct a df to hold the rss values until final calculations of mean,sd,N
       cmpnd.fit.df <- fit.df %>%
         dplyr::select(starts_with('t_'))
       cmpnd.fit.df <- tibble(temp = colnames(cmpnd.fit.df))
       cmpnd.fit.df$null <- NA
       cmpnd.fit.df$alt <- NA
-      
+
       #Iterate through each temperature, construct df, perform rss analysis, and add to cmpnd.fit.df
       for (t in 3:ncol(fit.df)) {
         current.fit.df <- fit.df %>%
@@ -1237,7 +1277,7 @@ compute.rss.models <-
                        plot.model = plotModel,
                        graphTitle = as.character(paste(
                          current.fit.df[1, 1], ' Alternate Model at ', colnames(fit.df)[t], sep = ''
-                        )))
+                       )))
       }
       # RSS0-RSS1
       cmpnd.fit.df <- cmpnd.fit.df %>%
@@ -1251,14 +1291,14 @@ compute.rss.models <-
       rss.df$alt.model.sd[i] <- sd(cmpnd.fit.df$alt)
       rss.df$rss.diff[i] <-
         sum(cmpnd.fit.df$null) - sum(cmpnd.fit.df$alt)
-      
+
       #Perform Mann-Whitney iU test on alternative vs. null model dataframe for compound.
       mann.whit <-
         wilcox.test(x = cmpnd.fit.df$null,
                     y = cmpnd.fit.df$alt,
                     exact = TRUE)
       rss.df$mannwhit.pval[i] <- mann.whit$p.value
-      
+
       #Message out RSS0-RSS1 and p value
       message('RSS Difference for ',
               rss.df[i, 1],
@@ -1266,7 +1306,7 @@ compute.rss.models <-
               rss.df$rss.diff[i])
       message('Mann-Whitney U Test p-val: ',
               rss.df$mannwhit.pval[i])
-      
+
       # Construct drc model and derive ec50 if p-val is significant
       if (rss.df$mannwhit.pval[i] <= 0.05) {
         #Find what temperature is the max point
@@ -1282,13 +1322,13 @@ compute.rss.models <-
           rss.df$mannwhit.ec50[i] <- signif(ec50.temp, 3)
         }
       }
-      
+
       #Plot the RSS values across the temperature range if true
       if (rssPlot == TRUE) {
         # First, clean up the temperatures
         cmpnd.fit.df$temp <- sub('t_', '', cmpnd.fit.df$temp)
         cmpnd.fit.df$temp <- as.numeric(cmpnd.fit.df$temp)
-        
+
         #Plot RSS as
         rss.plot <- ggplot(cmpnd.fit.df, aes(x = temp, y = diff)) +
           geom_point(shape = 21,
@@ -1305,7 +1345,7 @@ compute.rss.models <-
         print(rss.plot)
         ggsave(
           filename = paste('./data/models/', current.fit.df[1, 1], '_rss.png', sep =
-                             ''),
+            ''),
           scale = 1.25,
           dpi = 'retina',
           width = 6,
@@ -1324,7 +1364,7 @@ compute_parameter.rssmodel <- function(df, plotModel = FALSE) {
   test_params <-
     c('Tm_fit',
       'auc')
-  
+
   #Construct df of unique compounds and initialize parameter readouts.
   param.rss.df <- tibble(compound = (unique(
     filter(df, ncgc_id != 'control' & ncgc_id != 'vehicle')$ncgc_id
@@ -1335,9 +1375,9 @@ compute_parameter.rssmodel <- function(df, plotModel = FALSE) {
   param.rss.df$auc.ec50 <- as.numeric(NA)
   param.rss.df$auc.pval <- as.numeric(NA)
   param.rss.df$auc.maxDiff <- as.numeric(NA)
-  
+
   control.means <- control_analysis(df, output = 'df')
-  
+
   for (i in 1:nrow(param.rss.df)) {
     cmpnd.fit.df <- df %>%
       filter(ncgc_id == param.rss.df$compound[i])
@@ -1348,15 +1388,15 @@ compute_parameter.rssmodel <- function(df, plotModel = FALSE) {
         dplyr::select(ncgc_id, conc, I(test_params[p]))
       colnames(current.fit.df)[3] <- 'resp'
       current.model <- dr_fit(current.fit.df)
-      
+
       #Workaround to avoid drm that can't converge
       if (class(current.model) != 'list') {
         param.rss.df[i, paste(current_param, '.pval', sep = '')] <-
           noEffect(current.model)[3]
-        
+
         param.rss.df[i, paste(current_param, '.ec50', sep = '')] <-
           summary(current.model)$coefficients[4]
-        
+
         #Calculate the maximum difference in param and subtract negative control mean from it.
         current.fit.df$absDiff <-
           abs(current.fit.df$resp - control.means$means[control.means$parameters ==
@@ -1364,13 +1404,13 @@ compute_parameter.rssmodel <- function(df, plotModel = FALSE) {
         param.rss.df[i, paste(current_param, '.maxDiff', sep = '')] <-
           current.fit.df$resp[current.fit.df$absDiff == max(current.fit.df$absDiff)] - control.means$means[control.means$parameters ==
                                                                                                              current_param]
-        
+
         message('Analyzing Compound ', param.rss.df[i, 1], '...')
         message(current_param)
         message('EC50: ', param.rss.df[i, paste(current_param, '.ec50', sep =
-                                                  '')])
+          '')])
         message('No Effect ANOVA p-val: ', signif(param.rss.df[i, paste(current_param, '.pval', sep =
-                                                                          '')]), 1)
+          '')]), 1)
         if (plotModel == TRUE) {
           png(
             filename = paste(
@@ -1390,11 +1430,11 @@ compute_parameter.rssmodel <- function(df, plotModel = FALSE) {
               '\n',
               ' NoEffect pval: ',
               signif(param.rss.df[i, paste(current_param, '.pval', sep =
-                                             '')]),
+                '')]),
               '\n',
               'EC50: ',
               signif(param.rss.df[i, paste(current_param, '.ec50', sep =
-                                             '')]),
+                '')]),
               '\n',
               current_param
             )
@@ -1419,7 +1459,7 @@ dr.thermogram <- function(df, target = '') {
                  names_to = 'temp',
                  values_to = 'resp')
   df$temp <- as.numeric(sub('t_', '', df$temp))
-  
+
   dr.plot <- ggplot(df, aes(
     y = resp,
     x = temp,
@@ -1463,7 +1503,7 @@ parameter_heatmaps <- function(df, plotHeat = FALSE) {
     mutate(ec50 = log10(ec50))
   ec50.heat.df$parameter <- ec50.heat.df$parameter %>%
     sub('.ec50', '', .)
-  
+
   ec50.heat.plot <-
     ggplot(ec50.heat.df,
            aes(
@@ -1472,18 +1512,18 @@ parameter_heatmaps <- function(df, plotHeat = FALSE) {
              fill = ec50,
              label = signif(ec50)
            )) +
-    geom_tile(color = 'black') +
-    geom_text(alpha = 0.85, size = 2.5) +
-    theme_minimal() +
-    scale_fill_gradientn(colors = c('#EE3377', '#DDCC77', '#88CCEE'), ) +
-    labs(title = 'EC50 Parameter Comparison',
-         fill = 'Log EC50') +
-    theme(
-      axis.title.y = element_blank(),
-      axis.title.x = element_blank(),
-      axis.text.x = element_text(size = 12, face = 'bold')
-    )
-  
+      geom_tile(color = 'black') +
+      geom_text(alpha = 0.85, size = 2.5) +
+      theme_minimal() +
+      scale_fill_gradientn(colors = c('#EE3377', '#DDCC77', '#88CCEE'),) +
+      labs(title = 'EC50 Parameter Comparison',
+           fill = 'Log EC50') +
+      theme(
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_text(size = 12, face = 'bold')
+      )
+
   pval.heat.df <- df %>%
     dplyr::select(compound, contains('pval')) %>%
     pivot_longer(cols = !compound,
@@ -1502,20 +1542,20 @@ parameter_heatmaps <- function(df, plotHeat = FALSE) {
              fill = sigVal,
              label = signif(pval)
            )) +
-    geom_tile(color = 'black') +
-    geom_text(alpha = 0.85, size = 2.5) +
-    theme_minimal() +
-    labs(title = 'P-Value Parameter Comparison',
-         fill = 'P-Value') +
-    theme(
-      axis.title.y = element_blank(),
-      axis.title.x = element_blank(),
-      axis.text.x = element_text(size = 12, face = 'bold'),
-      
-    )
+      geom_tile(color = 'black') +
+      geom_text(alpha = 0.85, size = 2.5) +
+      theme_minimal() +
+      labs(title = 'P-Value Parameter Comparison',
+           fill = 'P-Value') +
+      theme(
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.x = element_text(size = 12, face = 'bold'),
+
+      )
   if (plotHeat == TRUE) {
     print(pval.heat.plot)
-    ggsave('./data/pval_heatmap.png',
+    ggsave('./data/figures/pval_heatmap.png',
            dpi = 'retina',
            scale = 1.25,
            width = 6,
@@ -1523,7 +1563,7 @@ parameter_heatmaps <- function(df, plotHeat = FALSE) {
            units = 'in')
     print(ec50.heat.plot)
     if (dev.cur() != 1) dev.off()
-    ggsave('./data/ec50_heatmap.png',
+    ggsave('./data/figures/ec50_heatmap.png',
            dpi = 'retina',
            scale = 1.25,
            width = 6,
@@ -1556,7 +1596,7 @@ rankOrder <- function(df) {
   methodRank <- sub('pval.sig', 'rankOrder', methodSig)
   methods <- sub('.rankOrder', '', methodRank)
   methodsEC <- paste(methods, '.ec50', sep = '')
-  
+
   for (i in 1:length(methods)) {
     rank.df <- filter(df, df[, (methodSig[i])] == 1)
     rank.df[, methodRank[i]] <-
@@ -1564,4 +1604,109 @@ rankOrder <- function(df) {
     df <- left_join(df, rank.df)
   }
   return(df)
+}
+
+# Determines the average Tm of the control (DMSO) group and then
+# finds those raw values in the data set, returning the data frame.
+findClosestTmColumn <- function(raw_df, control = 'vehicle') {
+  # Compute average (mean) and standard deviation of Tm_fit for "vehicle"
+  mean_Tm <- mean(raw_df$Tm_fit[raw_df$ncgc_id == control], na.rm = TRUE)
+  sd_Tm <- sd(raw_df$Tm_fit[raw_df$ncgc_id == control], na.rm = TRUE)
+
+  # Identify columns that begin with "t_" and parse their numeric suffixes
+  t_cols <- grep("^t_\\d+", names(raw_df), value = TRUE)
+  numeric_t_vals <- as.numeric(sub("^t_", "", t_cols))
+
+  # Find which suffix is numerically closest to mean_Tm
+  chosen_col_index <- which.min(abs(numeric_t_vals - mean_Tm))
+  chosen_col_name <- t_cols[chosen_col_index]
+
+  # Create a data frame with the specified columns plus the chosen t_ column
+  keep_cols <- c("ncgc_id", "conc", "well", "row", "col",
+                 "dHm_fit", "Tm_fit", "dG_std", chosen_col_name)
+  final_df <- raw_df[, keep_cols, drop = FALSE]
+
+  # Return mean, sd, and the resulting data frame
+  return(final_df)
+}
+
+# Determine dose-response fits for the isothermal data
+fitRawTmData <- function(df, output_dir = "./data/raw data plots") {
+
+  # 1) Identify the single t_ column
+  t_col <- grep("^t_\\d+", names(df), value = TRUE)
+  if (length(t_col) != 1) {
+    stop("Expected exactly one 't_' column, but found: ", length(t_col))
+  }
+
+  # 2) Filter out controls, rename that t_ column to 'resp'
+  df_filtered <- df %>%
+    filter(!ncgc_id %in% c("control", "vehicle")) %>%
+    rename(resp = all_of(t_col))
+
+  # Create output directory if not present
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = TRUE)
+  }
+
+  # 3) Group by ncgc_id and iterate
+  df_filtered %>%
+    group_by(ncgc_id) %>%
+    group_walk(~ {
+      current_id <- .y$ncgc_id
+
+      # Always plot raw points
+      p <- ggplot(.x, aes(x = conc, y = resp)) +
+        geom_point() +
+        scale_x_log10() +  # log scale if you prefer
+        labs(
+          title = paste("Dose-Response for", current_id),
+          x = "Concentration",
+          y = "Response"
+        ) +
+        theme_bw()
+
+      # Attempt to fit
+      mod <- dr_fit(.x)
+
+      # Check if mod is valid
+      if (!inherits(mod, "try-error") || inherits(mod, "drm")) {
+
+        # If successful, attempt to compute ED50
+        ed50_res <- try(ED(mod, 50, type = "relative"), silent = TRUE)
+
+        if (!inherits(ed50_res, "try-error")) {
+          ec50_val <- ed50_res[1, "Estimate"]
+
+          # Generate predicted curve
+          newdata <- data.frame(
+            conc = seq(min(.x$conc, na.rm = TRUE),
+                       max(.x$conc, na.rm = TRUE),
+                       length.out = 100)
+          )
+          pred_vals <- try(predict(mod, newdata = newdata), silent = TRUE)
+
+          if (!inherits(pred_vals, "try-error")) {
+            newdata$resp_pred <- pred_vals
+
+            # Add the fitted curve (red line) to the plot
+            p <- p +
+              geom_line(
+                data = newdata,
+                aes(x = conc, y = resp_pred),
+                color = "red"
+              ) +
+              labs(subtitle = paste("EC50 =", round(ec50_val, 4)))
+          }
+        }
+      } else {
+        message("Skipping fit for ", current_id, " (fitting error). Showing only raw points.")
+      }
+
+      # Save plot (raw points only if fail, or plus curve if success)
+      out_file <- file.path(output_dir, paste0("DR_Curve_", current_id, ".png"))
+      ggsave(out_file, p, width = 6, height = 4, dpi = 300)
+
+      message("Saved plot for ", current_id, " -> ", out_file)
+    })
 }
